@@ -9,7 +9,8 @@ For now, it's just a personal project (in beta state), so use at your own risk.
 But:
 
 - it works
-- it uses colors and icons
+- it displays colors and icons
+- it plays nicely with HTML and PHP
 - it's pretty quick
 
 It is intended to be used with Lualine (even though it's not a full blown Lualine component yet).
