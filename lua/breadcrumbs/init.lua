@@ -62,17 +62,18 @@ local MainConfig = {
 		[26] =  "BreadcrumbsTypeParameter" ,  -- TypeParameter
 		[255] = "BreadcrumbsMacro" ,          -- Macro
 	},
-	class_hl_normal    = "BreadcrumbsNormal",
-	class_hl_separator = "BreadcrumbsSeparator",
-	-- separator          = " • ",
-	separator          = " ⟩ ",
-	-- separator          = " > ",
-	separator_char     = "⟩",
-	use_icons          = true,
-	lualine_refresh    = true,
-	-- use_colors         = false,
-	use_colors         = true,
-	debug_msg          = false,
+	default_icon          = " ",
+	class_hl_normal       = "BreadcrumbsNormal",
+	class_hl_separator    = "BreadcrumbsSeparator",
+	class_hl_default_icon = "BreadcrumbsDefaultIcon",
+	separator             = " ⟩ ",
+	-- separator             = " • ",
+	-- separator             = " > ",
+	separator_char        = "⟩",
+	use_icons             = true,
+	lualine_refresh       = true,
+	use_colors            = true,
+	debug_msg             = false,
 }
 -- -----------------------------------------------------------------------------
 function IsUnderCursor(cur, sym)
@@ -173,12 +174,26 @@ function FormatSymbolSeparator(depth, config)
 end
 -- -----------------------------------------------------------------------------
 function FormatSymbolIcon(sym, config)
-	local icon = ""
+	local icon        = ""
+	local custom_icon = false
 	--
-	if config.use_icons  then icon = config.icons[sym.kind] end
+	if config.use_icons then
+		if config.icons[sym.kind] then
+			icon        = config.icons[sym.kind]
+			custom_icon = true
+		else
+			icon = config.default_icon
+		end
+	end
+	--
 	if config.use_colors then
-		local icon_hl = config.highlighting[sym.kind]
-		icon = "%#" .. icon_hl .. "#" .. icon .. "%*"
+		local icon_hl
+		if custom_icon then
+			icon_hl = config.highlighting[sym.kind]
+		else
+			icon_hl = config.class_hl_default_icon
+		end
+		icon = "%#" .. icon_hl .. "#" .. icon -- .. "%*"
 	end
 	--
 	return icon	
@@ -194,12 +209,14 @@ function FormatSymbol(sym, depth)
 end
 -- -----------------------------------------------------------------------------
 function FormatSymbolsHTMLPrepend(t1, t2)
+	-- print("PREPEND")
 	t1.first       = t2.first
 	t1.contents    = t2.contents .. t1.contents
 	t1.match_start = t1.match_start or t2.match_start
 end
 -- -----------------------------------------------------------------------------
 function FormatSymbolsHTMLAppend(t1, t2)
+	print("APPEND!!!!!")
 	t1.last        = t2.last
 	t1.contents    = t1.contents .. t2.contents
 	t1.match_start = t1.match_start or t2.match_start
@@ -259,10 +276,10 @@ function FormatSymbolsHTML(t_old, n)
 	if #t_old == 1 then return t_old[1].contents end
 	--
 	local t_new = { }
-	table.insert(t_new, t_old[1])
-	table.remove(t_old, 1)
+	table.insert(t_new, t_old[#t_old])
+	table.remove(t_old, #t_old)
 	--
-	for i = 1, #t_old do
+	for i = #t_old, 1, -1 do
 		for j = 1, #t_new do
 			if t_new[j].first == t_old[i].last then
 				FormatSymbolsHTMLPrepend(t_new[j], t_old[i])
@@ -281,17 +298,17 @@ function FormatSymbolsHTML(t_old, n)
 	if vim.bo.filetype == "php" then
 		return FormatOutputPHP(t_new)
 	else
-		return FormatSymbolsHTML(t_new, #t_new)
+		return t_new[1].contents
 	end
 end
 -- -----------------------------------------------------------------------------
-function CheckMatchStart(sym)
+function CheckMatchStartOrEnd(sym)
 	local cur = GetCursorCoordinates()
-	-- print(string.format("cur: [%d, %d]", cur.r, cur.c))
-	-- print(string.format("sym: [%d, %d]", sym.location.range.start.line, sym.location.range.start.character))
-	-- print("----------")
-	return cur.r == sym.location.range.start.line      + 1 and
-	       cur.c == sym.location.range.start.character + 1
+	return (cur.r == sym.location.range.start.line      + 1 and
+	        cur.c == sym.location.range.start.character + 1)
+		   or
+		   (cur.r == sym.location.range['end'].line      + 1 and
+		    cur.c == sym.location.range['end'].character - 1)
 end
 -- -----------------------------------------------------------------------------
 function ParseTableHTML(list)
@@ -314,7 +331,7 @@ function ParseTableHTML(list)
 			first       = list[i].containerName,
 			last        = list[i].name,
 			contents    = s,
-			match_start = CheckMatchStart(list[i])
+			match_start = CheckMatchStartOrEnd(list[i])
 		})
 	end
 	--
