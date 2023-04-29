@@ -94,8 +94,8 @@ function IsUnderCursor(cur, sym)
 	-- document symbol is in a single row/line and
 	-- the cursor is in the same row
 	elseif sym.r1 == sym.r2 and cur.r == sym.r1 + 1 then
-		r = cur.k >= sym.k1 + 1 and cur.k <= sym.k2 + 1
-		if r == false and cur.k < sym.k1 + 1 then
+		r = cur.c >= sym.c1 + 1 and cur.c <= sym.c2 + 1
+		if r == false and cur.c < sym.c1 + 1 then
 			c = -1
 		elseif r == false then
 			c = 1
@@ -103,14 +103,14 @@ function IsUnderCursor(cur, sym)
 	-- document symbol expands over multiple rows
 	-- cursor is in the first row (occupied by the symbol)
 	elseif cur.r == sym.r1 + 1 then
-		r = cur.k >= sym.k1 + 1
+		r = cur.c >= sym.c1 + 1
 		if r == false then
 			c = -1
 		end
 	-- document symbol expands over multiple rows
 	-- curosr is in the last row occupied by the symbol
 	elseif cur.r == sym.r2 + 1 then
-		r = cur.k <= sym.k2 + 1
+		r = cur.c <= sym.c2 + 1
 		if r == false then
 			c = 1
 		end
@@ -120,21 +120,20 @@ function IsUnderCursor(cur, sym)
 end
 -- -----------------------------------------------------------------------------
 function GetSymbolCoordinates(sym)
+	local range
+	--
 	if sym.range then
-		return {
-			r1 = sym.range.start.line,
-			k1 = sym.range.start.character,
-			r2 = sym.range['end'].line,
-			k2 = sym.range['end'].character
-		}
+		range = sym.range           -- default
 	else
-		return {
-			r1 = sym.location.range.start.line,
-			k1 = sym.location.range.start.character,
-			r2 = sym.location.range['end'].line,
-			k2 = sym.location.range['end'].character
-		}
+		range = sym.location.range  -- HTML, PHP
 	end
+	--
+	return {
+		r1 = range.start.line,
+		c1 = range.start.character,
+		r2 = range['end'].line,
+		c2 = range['end'].character
+	}
 end
 -- -----------------------------------------------------------------------------
 function GetCursorCoordinates()
@@ -142,7 +141,7 @@ function GetCursorCoordinates()
 
 	return {
 		r = coord[2],
-		k = coord[3]
+		c = coord[3]
 	}
 end
 -- -----------------------------------------------------------------------------
@@ -156,8 +155,8 @@ end
 function AuxWrite_2(result, ctx, i, coord_cur, coord_sym, sym)
 	print("-----")
 	print(string.format("number of elements: %d", i))
-	print(string.format("start [%d, %d]; end [%d, %d]", coord_sym.r1, coord_sym.k1, coord_sym.r2, coord_sym.k2))
-	print(string.format("cur [%d, %d]", coord_cur.r, coord_cur.k))
+	print(string.format("start [%d, %d]; end [%d, %d]", coord_sym.r1, coord_sym.c1, coord_sym.r2, coord_sym.c2))
+	print(string.format("cur [%d, %d]", coord_cur.r, coord_cur.c))
 	print(vim.inspect(sym.name))
 	print(vim.inspect(sym.detail))
 end
@@ -195,13 +194,15 @@ function FormatSymbol(sym, depth)
 end
 -- -----------------------------------------------------------------------------
 function FormatSymbolsHTMLPrepend(t1, t2)
-	t1.first    = t2.first
-	t1.contents = t2.contents .. t1.contents
+	t1.first       = t2.first
+	t1.contents    = t2.contents .. t1.contents
+	t1.match_start = t1.match_start or t2.match_start
 end
 -- -----------------------------------------------------------------------------
 function FormatSymbolsHTMLAppend(t1, t2)
-	t1.last     = t2.last
-	t1.contents = t1.contents .. t2.contents
+	t1.last        = t2.last
+	t1.contents    = t1.contents .. t2.contents
+	t1.match_start = t1.match_start or t2.match_start
 end
 -- -----------------------------------------------------------------------------
 function StringBeginsWith(str, pat)
@@ -236,7 +237,21 @@ function FormatOutputPHP(t_new)
 	return LeftTrimPHP(out)
 end
 -- -----------------------------------------------------------------------------
-function FormatSymbolsHTML(t_old)
+function FormatOutputHTMLBorderline(t_new)
+	local i = 1
+	--
+	while t_new[i].match_start == false do
+		i = i + 1
+	end
+	--
+	if i > #t_new then
+		return t_new[1].contents
+	else
+		return t_new[i].contents
+	end
+end
+-- -----------------------------------------------------------------------------
+function FormatSymbolsHTML(t_old, n)
 	if #t_old == 1 and vim.bo.filetype == "php" then
 		return FormatOutputPHP(t_old)
 	end
@@ -259,11 +274,24 @@ function FormatSymbolsHTML(t_old)
 		end
 	end
 	--
+	if #t_new == n and n == 2 then
+		return FormatOutputHTMLBorderline(t_new)
+	end
+	--
 	if vim.bo.filetype == "php" then
 		return FormatOutputPHP(t_new)
 	else
-		return FormatSymbolsHTML(t_new)
+		return FormatSymbolsHTML(t_new, #t_new)
 	end
+end
+-- -----------------------------------------------------------------------------
+function CheckMatchStart(sym)
+	local cur = GetCursorCoordinates()
+	-- print(string.format("cur: [%d, %d]", cur.r, cur.c))
+	-- print(string.format("sym: [%d, %d]", sym.location.range.start.line, sym.location.range.start.character))
+	-- print("----------")
+	return cur.r == sym.location.range.start.line      + 1 and
+	       cur.c == sym.location.range.start.character + 1
 end
 -- -----------------------------------------------------------------------------
 function ParseTableHTML(list)
@@ -283,9 +311,10 @@ function ParseTableHTML(list)
 		end
 		--
 		table.insert(t_new, {
-			first    = list[i].containerName,
-			last     = list[i].name,
-			contents = s
+			first       = list[i].containerName,
+			last        = list[i].name,
+			contents    = s,
+			match_start = CheckMatchStart(list[i])
 		})
 	end
 	--
@@ -314,7 +343,7 @@ function GetSymbolsWorkerHTML(data, depth)
 	local list = ParseTableHTML(matching)
 	-- print("----------")
 	-- print(vim.inspect(list))
-	vim.g.lsp_current_symbol = FormatSymbolsHTML(list)
+	vim.g.lsp_current_symbol = FormatSymbolsHTML(list, #list)
 end
 -- -----------------------------------------------------------------------------
 function GetSymbolsWorkerBinary(data, depth)
@@ -336,9 +365,9 @@ function GetSymbolsWorkerBinary(data, depth)
 				GetSymbolsWorker(sym.children, depth + 1)
 			end
 			break
-		elseif checkSymbol.k == -1 then
+		elseif checkSymbol.c == -1 then
 			d = i -1
-		elseif checkSymbol.k == 1 then
+		elseif checkSymbol.c == 1 then
 			l = i + 1
 		end
 	end
