@@ -2,6 +2,8 @@
 
 A simple breadcrumbs generator for Nvim.
 
+![Apr29::170222](https://user-images.githubusercontent.com/39658013/235310332-3f0a015c-ec28-4fbd-92ba-0674c0192e57.png)
+
 For now, it's just a personal project (in beta state), so use at your own risk.
 
 But:
