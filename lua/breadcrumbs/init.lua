@@ -33,13 +33,46 @@ local MainConfig = {
 		[26] =  " " , -- TypeParameter
 		[255] = " " , -- Macro
 	},
-	-- separator       = " • ",
-	separator       = " ⟩ ",
-	-- separator       = " > ",
-	use_icons       = true,
-	lualine_refresh = true,
-	use_colors      = false,
-	debug_msg       = false,
+	highlighting = {
+		[1] =   "BreadcrumbsFile" ,           -- File
+		[2] =   "BreadcrumbsModule" ,         -- Module
+		[3] =   "BreadcrumbsNamespace" ,      -- Namespace
+		[4] =   "BreadcrumbsPackage" ,        -- Package
+		[5] =   "BreadcrumbsClass" ,          -- Class
+		[6] =   "BreadcrumbsMethod" ,         -- Method
+		[7] =   "BreadcrumbsProperty" ,       -- Property
+		[8] =   "BreadcrumbsField" ,          -- Field
+		[9] =   "BreadcrumbsConstructor" ,    -- Constructor
+		[10] =  "BreadcrumbsEnum" ,           -- Enum
+		[11] =  "BreadcrumbsInterface" ,      -- Interface
+		[12] =  "BreadcrumbsFunction" ,       -- Function
+		[13] =  "BreadcrumbsVariable" ,       -- Variable
+		[14] =  "BreadcrumbsConstant" ,       -- Constant
+		[15] =  "BreadcrumbsString" ,         -- String
+		[16] =  "BreadcrumbsNumber" ,         -- Number
+		[17] =  "BreadcrumbsBoolean" ,        -- Boolean
+		[18] =  "BreadcrumbsArray" ,          -- Array
+		[19] =  "BreadcrumbsObject" ,         -- Object
+		[20] =  "BreadcrumbsKey" ,            -- Key
+		[21] =  "BreadcrumbsNull" ,           -- Null
+		[22] =  "BreadcrumbsEnumMember" ,     -- EnumMember
+		[23] =  "BreadcrumbsStruct" ,         -- Struct
+		[24] =  "BreadcrumbsEvent" ,          -- Event
+		[25] =  "BreadcrumbsOperator" ,       -- Operator
+		[26] =  "BreadcrumbsTypeParameter" ,  -- TypeParameter
+		[255] = "BreadcrumbsMacro" ,          -- Macro
+	},
+	class_hl_normal    = "BreadcrumbsNormal",
+	class_hl_separator = "BreadcrumbsSeparator",
+	-- separator          = " • ",
+	separator          = " ⟩ ",
+	-- separator          = " > ",
+	separator_char     = "⟩",
+	use_icons          = true,
+	lualine_refresh    = true,
+	-- use_colors         = false,
+	use_colors         = true,
+	debug_msg          = false,
 }
 -- -----------------------------------------------------------------------------
 function IsUnderCursor(cur, sym)
@@ -129,16 +162,36 @@ function AuxWrite_2(result, ctx, i, coord_cur, coord_sym, sym)
 	print(vim.inspect(sym.detail))
 end
 -- -----------------------------------------------------------------------------
-function FormatSymbol(sym, depth)
+function FormatSymbolSeparator(depth, config)
 	local separator = ""
-	local icon      = ""
 	--
-	if depth > 0 then separator = MainConfig.separator end
+	if depth > 0 then separator = config.separator end
+	if config.use_colors then
+		separator = "%#" .. config.class_hl_separator .. "#" .. separator
+	end
 	--
-	if MainConfig.use_icons  then icon = string.format("%s", MainConfig.icons[sym.kind]) end
-	if MainConfig.use_colors then icon = "%#Comment" .. icon .. "%*" end
+	return separator
+end
+-- -----------------------------------------------------------------------------
+function FormatSymbolIcon(sym, config)
+	local icon = ""
 	--
-	return string.format("%s%s%s", separator, icon, sym.name)
+	if config.use_icons  then icon = config.icons[sym.kind] end
+	if config.use_colors then
+		local icon_hl = config.highlighting[sym.kind]
+		icon = "%#" .. icon_hl .. "#" .. icon .. "%*"
+	end
+	--
+	return icon	
+end
+-- -----------------------------------------------------------------------------
+function FormatSymbol(sym, depth)
+	local separator = FormatSymbolSeparator(depth, MainConfig)
+	local icon      = FormatSymbolIcon(sym, MainConfig)
+	return separator ..
+	       icon ..
+		   "%#" .. MainConfig.class_hl_normal .. "#" ..
+		   sym.name
 end
 -- -----------------------------------------------------------------------------
 function FormatSymbolsHTMLPrepend(t1, t2)
@@ -151,7 +204,68 @@ function FormatSymbolsHTMLAppend(t1, t2)
 	t1.contents = t1.contents .. t2.contents
 end
 -- -----------------------------------------------------------------------------
+-- function LeftTrimPHP(s)
+-- 	local i               = 0
+-- 	local c
+-- 	--
+-- 	repeat
+-- 		i = i + 1
+-- 		c = string.sub(s, i, i)
+-- 	until c ~= ' '
+-- 	--
+-- 	repeat
+-- 		i = i + 1
+-- 		c = string.sub(s, i, i)
+-- 	until c == ' '
+-- 	--
+-- 	repeat
+-- 		i = i + 1
+-- 		c = string.sub(s, i, i)
+-- 	until c ~= ' '
+-- 	--
+-- 	return string.sub(s, i)
+-- end
+-- -----------------------------------------------------------------------------
+--   >..  citanje_clanak
+-- -----------------------------------------------------------------------------
+function StringBeginsWith(str, pat)
+	return string.sub(str, 1, #pat) == pat
+end
+-- -----------------------------------------------------------------------------
+function LeftTrimPHP(s)
+	-- form the separator string pattern:
+	local test = MainConfig.separator
+	if MainConfig.use_colors == true then
+		test = "%#" .. MainConfig.class_hl_separator .. "#" ..
+		       test
+	end
+	-- check how many spaces at the end:
+	local i    = #test
+	local corr = 0
+	--
+	while test:sub(i, i) == ' ' do
+		print(string.format("test pattern: %s", test))
+		i    = i - 1
+		corr = corr + 1
+	end
+	-- trim, if needed:
+	if StringBeginsWith(s, test) then
+		return string.sub(s, #test + corr)
+	else
+		return s
+	end
+end
+-- -----------------------------------------------------------------------------
+function FormatOutputPHP(t_new)
+	local out = t_new[1].contents
+	return LeftTrimPHP(out)
+end
+-- -----------------------------------------------------------------------------
 function FormatSymbolsHTML(t_old)
+	if #t_old == 1 and vim.bo.filetype == "php" then
+		return FormatOutputPHP(t_old)
+	end
+	--
 	if #t_old == 1 then return t_old[1].contents end
 	--
 	local t_new = { }
@@ -170,17 +284,27 @@ function FormatSymbolsHTML(t_old)
 		end
 	end
 	--
-	return FormatSymbolsHTML(t_new)
+	if vim.bo.filetype == "php" then
+		return FormatOutputPHP(t_new)
+	else
+		return FormatSymbolsHTML(t_new)
+	end
 end
 -- -----------------------------------------------------------------------------
 function ParseTableHTML(list)
 	local t_new = { }
 
 	for i = 1, #list do
-		local s = MainConfig.icons[list[i].kind] .. list[i].name
+		-- (icon)? icon + name : name
+		local icon = FormatSymbolIcon(list[i], MainConfig)
+		local s    = icon ..
+		             "%#".. MainConfig.class_hl_normal .. "#" ..
+				     list[i].name
 		--
 		if list[i].name ~= "html" then
-			s = MainConfig.separator .. s
+			-- (separator)? separator + previous : previous
+			local separator = FormatSymbolSeparator(1, MainConfig) -- (depth, config)
+			s = separator .. s
 		end
 		--
 		table.insert(t_new, {
@@ -315,4 +439,3 @@ end
 -- -----------------------------------------------------------------------------
 return M
 -- -----------------------------------------------------------------------------
-
