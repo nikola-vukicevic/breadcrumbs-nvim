@@ -204,30 +204,6 @@ function FormatSymbolsHTMLAppend(t1, t2)
 	t1.contents = t1.contents .. t2.contents
 end
 -- -----------------------------------------------------------------------------
--- function LeftTrimPHP(s)
--- 	local i               = 0
--- 	local c
--- 	--
--- 	repeat
--- 		i = i + 1
--- 		c = string.sub(s, i, i)
--- 	until c ~= ' '
--- 	--
--- 	repeat
--- 		i = i + 1
--- 		c = string.sub(s, i, i)
--- 	until c == ' '
--- 	--
--- 	repeat
--- 		i = i + 1
--- 		c = string.sub(s, i, i)
--- 	until c ~= ' '
--- 	--
--- 	return string.sub(s, i)
--- end
--- -----------------------------------------------------------------------------
---   >..  citanje_clanak
--- -----------------------------------------------------------------------------
 function StringBeginsWith(str, pat)
 	return string.sub(str, 1, #pat) == pat
 end
@@ -244,7 +220,6 @@ function LeftTrimPHP(s)
 	local corr = 0
 	--
 	while test:sub(i, i) == ' ' do
-		print(string.format("test pattern: %s", test))
 		i    = i - 1
 		corr = corr + 1
 	end
