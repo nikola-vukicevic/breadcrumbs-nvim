@@ -28,7 +28,7 @@ The output can also be used in other places (more on that in the next section).
 
 ## Installation
 
-ATM, setup is not automated, but it isn't hard either:
+ATM, setup is not automated, but it isn't that hard either:
 
 - There are two exposed methods (`Load` and `Update`), that need to be hooked up to Vim's `CursorMoved` and `InsertLeave` events
 
@@ -42,6 +42,24 @@ vim.api.nvim_create_autocmd("CursorMoved" , {
 	pattern = "*",
 	command = "lua require('breadcrumbs').Update()"
 })
+```
+
+The Load method also needs to be connected with Vim's `CursorHold` method and (more importantly), data structure that stores the locations of various document symbols, needs to be initialized when LSP server starts.
+
+Probably the easiest way to do it, is to add the following lines to the `on_attach` method that gets called when the LSP server initializes.
+
+```lua
+local on_attach = function(client, bufnr)
+	....
+	if client.server_capabilities.documentSymbolProvider then
+		require('breadcrumbs').Load()
+		vim.api.nvim_create_autocmd( { "InsertLeave", "CursorHold" } , {
+			pattern = "*",
+			command = "lua require('breadcrumbs').Load()"
+		})
+	end
+	....
+end
 ```
 
 The 'breadcrumbs' strings is stored as `g:lsp_current_symbol`, so it is easy to 'pipe' it into Lualine:
