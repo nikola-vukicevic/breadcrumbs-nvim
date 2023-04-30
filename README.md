@@ -26,10 +26,6 @@ The output can also be used in other places (more on that in the next section).
 - [lualine](https://github.com/nvim-lualine/lualine.nvim)
 - [Nvim-web-devicons](https://github.com/nvim-tree/nvim-web-devicons)
 
-## Motivation/rationale
-
-I check out 'the usual suspects', but considering that I had some small highlighting issues with nvim-navic and some issues displaying HTML tags with Aerial (and also, Aerial is much 'bigger' in scope), I decided to just write my own implementation from scratch and 'be done with it'.
-
 ## Installation
 
 ATM, setup is not automated, but it isn't that hard either:
@@ -119,6 +115,10 @@ vim.api.nvim_set_hl ( 0 , "BreadcrumbsOperator" ,      { bg = "#2c323c" , fg = "
 vim.api.nvim_set_hl ( 0 , "BreadcrumbsTypeParameter" , { bg = "#2c323c" , fg = "#80a0f0" } )
 vim.api.nvim_set_hl ( 0 , "BreadcrumbsMacro" ,         { bg = "#2c323c" , fg = "#80a0f0" } )
 ```
+
+## Motivation/rationale
+
+I check out 'the usual suspects', but considering that I had some small highlighting issues with nvim-navic and some issues displaying HTML tags with Aerial (and also, Aerial is much 'bigger' in scope), I decided to just write my own implementation from scratch and 'be done with it'.
 
 ## TODO
 
