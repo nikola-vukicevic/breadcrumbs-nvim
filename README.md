@@ -100,5 +100,6 @@ vim.api.nvim_set_hl ( 0 , "BreadcrumbsMacro" ,         { bg = "#2c323c" , fg = "
 
 ## TODO
 
+- Treesitter 'backend' (backup)
 - User config/setup
 - Other improvements and possible bug fixes
