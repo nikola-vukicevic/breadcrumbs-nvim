@@ -119,21 +119,27 @@ function IsUnderCursor(cur, sym)
 end
 -- -----------------------------------------------------------------------------
 function AuxGetRangeHTMLPHP(sym) -- 357
-	local range
-	--
 	if vim.bo.filetype == "html" then
-		range = sym.location.range
+		if sym.location.range ~= nil then
+			return sym.location.range
+		else
+			return nil
+		end
 	elseif vim.bo.filetype == "php" then
 		if sym.range ~= nil then
-			range = sym.range
+			return sym.range
+		elseif sym.location.range ~= nil then
+			return sym.location.range
 		else
-			range = sym.location.range
+			return nil
 		end
 	else
-		range = sym.range
+		if sym.range ~= nil then
+			return sym.range
+		else
+			return nil
+		end
 	end
-	--
-	return range
 end
 -- -----------------------------------------------------------------------------
 function AuxGetLineHTMLPHP(sym) -- 400
@@ -489,6 +495,9 @@ end
 -- TODO (REFRESH?)
 -- -----------------------------------------------------------------------------
 function GetSymbols(data, depth)
+	if data[1] == nil then return end
+	local range = AuxGetRangeHTMLPHP(data[1])
+	if range == nil then return end
 	-- if data == nil or data == "" then return end
 	vim.g.lsp_current_symbol = ""
 	-- AuxWrite_1(data)
