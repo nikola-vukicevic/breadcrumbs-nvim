@@ -71,7 +71,7 @@ local MainConfig = {
 	-- separator             = " > ",
 	separator_char        = "⟩",
 	use_icons             = true,
-	lualine_refresh       = true,
+	lualine_refresh       = false,
 	use_colors            = true,
 	debug_msg             = false,
 }
@@ -88,7 +88,7 @@ function IsUnderCursor(cur, sym)
 		r = false
 		c = 1
 	-- document symbol expands over multiple rows and
-	-- thecursor is between the first row (not in) and the
+	-- the cursor is between the first row (not in) and the
 	-- last row (not including the first and last rows)
 	elseif cur.r > sym.r1 + 1 and cur.r < sym.r2 + 1 then
 		r = true
@@ -101,15 +101,15 @@ function IsUnderCursor(cur, sym)
 		elseif r == false then
 			c = 1
 		end
-	-- document symbol expands over multiple rows
+	-- document symbol expands over multiple rows;
 	-- cursor is in the first row (occupied by the symbol)
 	elseif cur.r == sym.r1 + 1 then
 		r = cur.c >= sym.c1 + 1
 		if r == false then
 			c = -1
 		end
-	-- document symbol expands over multiple rows
-	-- curosr is in the last row occupied by the symbol
+	-- document symbol expands over multiple rows;
+	-- cursor is in the last row occupied by the symbol
 	elseif cur.r == sym.r2 + 1 then
 		r = cur.c <= sym.c2 + 1
 		if r == false then
@@ -119,6 +119,8 @@ function IsUnderCursor(cur, sym)
 	--
 	return { r = r, c = c }
 end
+-- -----------------------------------------------------------------------------
+-- TODO
 -- -----------------------------------------------------------------------------
 function GetSymbolCoordinates(sym)
 	local range
@@ -188,11 +190,13 @@ function FormatSymbolIcon(sym, config)
 	--
 	if config.use_colors then
 		local icon_hl
+		--
 		if custom_icon then
 			icon_hl = config.highlighting[sym.kind]
 		else
 			icon_hl = config.class_hl_default_icon
 		end
+		--
 		icon = "%#" .. icon_hl .. "#" .. icon -- .. "%*"
 	end
 	--
@@ -210,21 +214,25 @@ end
 -- -----------------------------------------------------------------------------
 function FormatSymbolsHTMLPrepend(t1, t2)
 	-- print("PREPEND")
-	t1.first       = t2.first
-	t1.contents    = t2.contents .. t1.contents
-	t1.match_start = t1.match_start or t2.match_start
+	t1.first              = t2.first
+	t1.contents           = t2.contents .. t1.contents
+	t1.match_start_or_end = t1.match_start_or_end or
+	                        t2.match_start_or_end
 end
 -- -----------------------------------------------------------------------------
 function FormatSymbolsHTMLAppend(t1, t2)
 	print("APPEND!!!!!")
-	t1.last        = t2.last
-	t1.contents    = t1.contents .. t2.contents
-	t1.match_start = t1.match_start or t2.match_start
+	t1.last               = t2.last
+	t1.contents           = t1.contents .. t2.contents
+	t1.match_start_or_end = t1.match_start_or_end or
+	                        t2.match_start_or_end
 end
 -- -----------------------------------------------------------------------------
 function StringBeginsWith(str, pat)
 	return string.sub(str, 1, #pat) == pat
 end
+-- -----------------------------------------------------------------------------
+-- TODO
 -- -----------------------------------------------------------------------------
 function LeftTrimPHP(s)
 	-- form the separator string pattern:
@@ -254,28 +262,45 @@ function FormatOutputPHP(t_new)
 	return LeftTrimPHP(out)
 end
 -- -----------------------------------------------------------------------------
+-- TODO
+-- -----------------------------------------------------------------------------
 function FormatOutputHTMLBorderline(t_new)
-	local i = 1
-	--
-	while t_new[i].match_start == false do
-		i = i + 1
-	end
-	--
-	if i > #t_new then
+	-- print("--- Borderline ---")
+	-- print(vim.inspect(t_new))
+	if t_new[1].match_start_or_end == true then
 		return t_new[1].contents
 	else
-		return t_new[i].contents
+		return t_new[2].contents
 	end
 end
 -- -----------------------------------------------------------------------------
-function FormatSymbolsHTML(t_old, n)
-	if #t_old == 1 and vim.bo.filetype == "php" then
-		return FormatOutputPHP(t_old)
+-- TODO: ATM, the program works under the assumption that all the symbols
+--       that the LSP servers sends as response are in proper order and
+--       the only potential problem arises when two symbols are righ next to
+--       each other, in the same row and the cursor is just at the left edge
+--       of the rigght symbol (right over the "<" char).
+--       If the assumption is correct, the problem can be solved by removing
+--       the other symbol from the table.
+--       The assumptions needs further investigation (but intuitively, it seems
+--       correct, and for now, empirically, it seems to hold up).
+-- -----------------------------------------------------------------------------
+function FormatSymbolHTMLResolveSameRow(t_old)
+	if t_old[#t_old].line ~= t_old[#t_old - 1].line then return end
+	--
+	if t_old[#t_old].match_start_or_end == true then
+		table.remove(t_old, #t_old - 1)
+		return
 	end
 	--
-	if #t_old == 1 then return t_old[1].contents end
-	--
+	if t_old[#t_old - 1].match_start_or_end == true then
+		table.remove(t_old, #t_old)
+		return
+	end
+end
+-- -----------------------------------------------------------------------------
+function FormatSymbolsHTMLWorker(t_old)
 	local t_new = { }
+	--
 	table.insert(t_new, t_old[#t_old])
 	table.remove(t_old, #t_old)
 	--
@@ -291,7 +316,23 @@ function FormatSymbolsHTML(t_old, n)
 		end
 	end
 	--
-	if #t_new == n and n == 2 then
+	return t_new
+end
+-- -----------------------------------------------------------------------------
+-- TODO
+-- -----------------------------------------------------------------------------
+function FormatSymbolsHTML(t_old)
+	if #t_old == 1 and vim.bo.filetype == "php" then
+		return FormatOutputPHP(t_old)
+	end
+	--
+	if #t_old == 1 then return t_old[1].contents end
+	--
+	FormatSymbolHTMLResolveSameRow(t_old)
+	--
+	local t_new = FormatSymbolsHTMLWorker(t_old)
+	--
+	if #t_new == 2 then
 		return FormatOutputHTMLBorderline(t_new)
 	end
 	--
@@ -302,13 +343,15 @@ function FormatSymbolsHTML(t_old, n)
 	end
 end
 -- -----------------------------------------------------------------------------
+-- TODO !!!
+-- -----------------------------------------------------------------------------
 function CheckMatchStartOrEnd(sym)
 	local cur = GetCursorCoordinates()
 	return (cur.r == sym.location.range.start.line      + 1 and
 	        cur.c == sym.location.range.start.character + 1)
 		   or
 		   (cur.r == sym.location.range['end'].line      + 1 and
-		    cur.c == sym.location.range['end'].character - 1)
+		    cur.c == sym.location.range['end'].character)
 end
 -- -----------------------------------------------------------------------------
 function ParseTableHTML(list)
@@ -328,10 +371,11 @@ function ParseTableHTML(list)
 		end
 		--
 		table.insert(t_new, {
-			first       = list[i].containerName,
-			last        = list[i].name,
-			contents    = s,
-			match_start = CheckMatchStartOrEnd(list[i])
+			first              = list[i].containerName,
+			last               = list[i].name,
+			contents           = s,
+			line               = list[i].location.range.start.line,
+			match_start_or_end = CheckMatchStartOrEnd(list[i])
 		})
 	end
 	--
@@ -357,10 +401,10 @@ function GetSymbolsWorkerHTML(data, depth)
 	--
 	if #matching < 1 then return end
 	--
-	local list = ParseTableHTML(matching)
+	local t_start = ParseTableHTML(matching)
 	-- print("----------")
 	-- print(vim.inspect(list))
-	vim.g.lsp_current_symbol = FormatSymbolsHTML(list, #list)
+	vim.g.lsp_current_symbol = FormatSymbolsHTML(t_start)
 end
 -- -----------------------------------------------------------------------------
 function GetSymbolsWorkerBinary(data, depth)
@@ -411,6 +455,8 @@ function GetSymbolsWorker(data, depth)
 		end
 	end
 end
+-- -----------------------------------------------------------------------------
+-- TODO (REFRESH?)
 -- -----------------------------------------------------------------------------
 function GetSymbols(data, depth)
 	-- if data == nil or data == "" then return end
