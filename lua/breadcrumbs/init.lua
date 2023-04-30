@@ -77,59 +77,85 @@ local MainConfig = {
 }
 -- -----------------------------------------------------------------------------
 function IsUnderCursor(cur, sym)
-	local r
-	local c = 0
+	local res = false
+	local cor = 0
 	-- cursor is at least one whole row above the symbol
 	if cur.r < sym.r1 + 1 then
-		r = false
-		c = -1
+		cor = -1
 	-- cursor is at least one whole row below the symbol
 	elseif cur.r > (sym.r2 + 1) then
-		r = false
-		c = 1
+		cor = 1
 	-- document symbol expands over multiple rows and
 	-- the cursor is between the first row (not in) and the
 	-- last row (not including the first and last rows)
 	elseif cur.r > sym.r1 + 1 and cur.r < sym.r2 + 1 then
-		r = true
+		res = true
 	-- document symbol is in a single row/line and
 	-- the cursor is in the same row
 	elseif sym.r1 == sym.r2 and cur.r == sym.r1 + 1 then
-		r = cur.c >= sym.c1 + 1 and cur.c <= sym.c2 + 1
-		if r == false and cur.c < sym.c1 + 1 then
-			c = -1
-		elseif r == false then
-			c = 1
+		res = cur.c >= sym.c1 + 1 and cur.c <= sym.c2 + 1
+		if res == false and cur.c < sym.c1 + 1 then
+			cor = -1
+		elseif res == false then
+			cor = 1
 		end
 	-- document symbol expands over multiple rows;
 	-- cursor is in the first row (occupied by the symbol)
 	elseif cur.r == sym.r1 + 1 then
-		r = cur.c >= sym.c1 + 1
-		if r == false then
-			c = -1
+		res = cur.c >= sym.c1 + 1
+		if res == false then
+			cor = -1
 		end
 	-- document symbol expands over multiple rows;
 	-- cursor is in the last row occupied by the symbol
 	elseif cur.r == sym.r2 + 1 then
-		r = cur.c <= sym.c2 + 1
-		if r == false then
-			c = 1
+		res = cur.c <= sym.c2 + 1
+		if res == false then
+			cor = 1
 		end
 	end
 	--
-	return { r = r, c = c }
+	return { res = res, cor = cor }
+end
+-- -----------------------------------------------------------------------------
+function AuxGetRangeHTMLPHP(sym) -- 357
+	local range
+	--
+	if vim.bo.filetype == "html" then
+		range = sym.location.range
+	elseif vim.bo.filetype == "php" then
+		if sym.range ~= nil then
+			range = sym.range
+		else
+			range = sym.location.range
+		end
+	else
+		range = sym.range
+	end
+	--
+	return range
+end
+-- -----------------------------------------------------------------------------
+function AuxGetLineHTMLPHP(sym) -- 400
+	local line
+	--
+	if vim.bo.filetype == "html" then
+		line = sym.location.range.start.line
+	else
+		if sym.range ~= nil then
+			line = sym.range.start.line
+		else
+			line = sym.location.range.start.line
+		end
+	end
+	--
+	return line
 end
 -- -----------------------------------------------------------------------------
 -- TODO
 -- -----------------------------------------------------------------------------
 function GetSymbolCoordinates(sym)
-	local range
-	--
-	if sym.range then
-		range = sym.range           -- default
-	else
-		range = sym.location.range  -- HTML, PHP
-	end
+	local range = AuxGetRangeHTMLPHP(sym)
 	--
 	return {
 		r1 = range.start.line,
@@ -200,7 +226,7 @@ function FormatSymbolIcon(sym, config)
 		icon = "%#" .. icon_hl .. "#" .. icon -- .. "%*"
 	end
 	--
-	return icon	
+	return icon
 end
 -- -----------------------------------------------------------------------------
 function FormatSymbol(sym, depth)
@@ -327,9 +353,9 @@ function FormatSymbolsHTML(t_old)
 	end
 	--
 	if #t_old == 1 then return t_old[1].contents end
-	--
+	-- -----
 	FormatSymbolHTMLResolveSameRow(t_old)
-	--
+	-- -----
 	local t_new = FormatSymbolsHTMLWorker(t_old)
 	--
 	if #t_new == 2 then
@@ -346,12 +372,14 @@ end
 -- TODO !!!
 -- -----------------------------------------------------------------------------
 function CheckMatchStartOrEnd(sym)
-	local cur = GetCursorCoordinates()
-	return (cur.r == sym.location.range.start.line      + 1 and
-	        cur.c == sym.location.range.start.character + 1)
+	local cur   = GetCursorCoordinates()
+	local range = AuxGetRangeHTMLPHP(sym)
+	--
+	return (cur.r == range.start.line      + 1 and
+	        cur.c == range.start.character + 1)
 		   or
-		   (cur.r == sym.location.range['end'].line      + 1 and
-		    cur.c == sym.location.range['end'].character)
+		   (cur.r == range['end'].line      + 1 and
+		    cur.c == range['end'].character)
 end
 -- -----------------------------------------------------------------------------
 function ParseTableHTML(list)
@@ -370,11 +398,13 @@ function ParseTableHTML(list)
 			s = separator .. s
 		end
 		--
+		local line = AuxGetLineHTMLPHP(list[i])
+		--
 		table.insert(t_new, {
 			first              = list[i].containerName,
 			last               = list[i].name,
 			contents           = s,
-			line               = list[i].location.range.start.line,
+			line               = line,
 			match_start_or_end = CheckMatchStartOrEnd(list[i])
 		})
 	end
@@ -394,7 +424,7 @@ function GetSymbolsWorkerHTML(data, depth)
 		local coord_cur   = GetCursorCoordinates()
 		local checkSymbol = IsUnderCursor(coord_cur, coord_sym)
 
-		if checkSymbol.r then
+		if checkSymbol.res then
 			table.insert(matching, sym)
 		end
 	end
@@ -418,7 +448,7 @@ function GetSymbolsWorkerBinary(data, depth)
 		local coord_cur   = GetCursorCoordinates()
 		local checkSymbol = IsUnderCursor(coord_cur, coord_sym)
 
-		if checkSymbol.r then
+		if checkSymbol.res then
 			-- AuxWrite_2(result, ctx, i, coord_cur, coord_sym, sym)
 			vim.g.lsp_current_symbol = vim.g.lsp_current_symbol .. FormatSymbol(sym, depth)
 			-- print(sym.name)
@@ -426,9 +456,9 @@ function GetSymbolsWorkerBinary(data, depth)
 				GetSymbolsWorker(sym.children, depth + 1)
 			end
 			break
-		elseif checkSymbol.c == -1 then
+		elseif checkSymbol.cor == -1 then
 			d = i -1
-		elseif checkSymbol.c == 1 then
+		elseif checkSymbol.cor == 1 then
 			l = i + 1
 		end
 	end
@@ -443,7 +473,7 @@ function GetSymbolsWorker(data, depth)
 		local coord_cur   = GetCursorCoordinates()
 		local checkSymbol = IsUnderCursor(coord_cur, coord_sym)
 
-		if checkSymbol.r then
+		if checkSymbol.res then
 			-- AuxWrite_2(result, ctx, i, coord_cur, coord_sym, sym)
 			vim.g.lsp_current_symbol = vim.g.lsp_current_symbol .. FormatSymbol(sym, depth)
 			-- print(sym.name)
