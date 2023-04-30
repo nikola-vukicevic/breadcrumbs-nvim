@@ -8,7 +8,7 @@ For now, it's just a personal project (in beta state), so use at your own risk.
 
 But:
 
-- it works
+- it works *
 - it displays colors and icons
 - it plays nicely with HTML and PHP
 - it's pretty quick
@@ -17,7 +17,7 @@ It is intended to be used with Lualine (even though it's not a full blown Lualin
 
 The output can also be used in other places (more on that in the next section).
 
-(Of course, bug reports are appreciated.)
+(I can't spot any major issues but, of course, bug reports are very much appreciated.)
 
 ## Requirements
 
