@@ -26,6 +26,10 @@ The output can also be used in other places (more on that in the next section).
 - [lualine](https://github.com/nvim-lualine/lualine.nvim)
 - [Nvim-web-devicons](https://github.com/nvim-tree/nvim-web-devicons)
 
+## Motivation/rationale
+
+I check out 'the usual suspects', but considering that I had some small highlighting issues with nvim-navic and some issues displaying HTML tags with Aerial (and also, Aerial is much 'bigger' in scope), I decided to just write my own implementation from scratch.
+
 ## Installation
 
 ATM, setup is not automated, but it isn't that hard either:
