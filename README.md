@@ -53,7 +53,7 @@ local on_attach = function(client, bufnr)
 	....
 	if client.server_capabilities.documentSymbolProvider then
 		require('breadcrumbs').Load()
-		vim.api.nvim_create_autocmd( { "InsertLeave", "CursorHold" } , {
+		vim.api.nvim_create_autocmd( { "CursorHold" } , {
 			pattern = "*",
 			command = "lua require('breadcrumbs').Load()"
 		})
