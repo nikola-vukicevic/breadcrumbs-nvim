@@ -88,7 +88,7 @@ require('lualine').setup {
 }
 ```
 
-Also, it uses custom highlighting groups (that need to be added) ....
+In order for everythong to work properly, custom highlighting groups need to be set up (example shown below) ....
 
 ```lua
 vim.api.nvim_set_hl ( 0 , "BreadcrumbsFile" ,          { bg = "#2c323c" , fg = "#7fc29b" } )
