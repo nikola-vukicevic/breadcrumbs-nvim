@@ -28,7 +28,7 @@ The output can also be used in other places (more on that in the next section).
 
 ## Motivation/rationale
 
-I check out 'the usual suspects', but considering that I had some small highlighting issues with nvim-navic and some issues displaying HTML tags with Aerial (and also, Aerial is much 'bigger' in scope), I decided to just write my own implementation from scratch.
+I check out 'the usual suspects', but considering that I had some small highlighting issues with nvim-navic and some issues displaying HTML tags with Aerial (and also, Aerial is much 'bigger' in scope), I decided to just write my own implementation from scratch and 'be done with it'.
 
 ## Installation
 
