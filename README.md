@@ -13,7 +13,7 @@ But:
 - it plays nicely with HTML and PHP
 - it's pretty quick
 
-It is intended to be used with Lualine (even though it's not a full blown Lualine component yet), but, the output can also be used in other places (more on that in the next section).
+It is intended to be used with Lualine (even though it's not a full blown Lualine component yet), but, the output can also be used in other places (more on that later on).
 
 ## Requirements
 
@@ -63,7 +63,7 @@ local on_attach = function(client, bufnr)
 end
 ```
 
-The 'breadcrumbs' strings is stored as `g:lsp_current_symbol`, so it is easy to 'pipe' it into Lualine:
+The 'breadcrumbs' strings is stored as `g:lsp_current_symbol`, so it is easy to 'pipe' it into Lualine (probably other status line plugins as well):
 
 ```lua
 function ReadLSPSymbol()
@@ -121,7 +121,7 @@ vim.api.nvim_set_hl ( 0 , "BreadcrumbsMacro" ,         { bg = "#2c323c" , fg = "
 
 I wanted a very simple plugin that only creates the "breadcrumbs", so I checked out 'the usual suspects'.
 
-With nvim-navic, I somehow couldn't get the highlighting all the way right (there were some minor issues). As for Aerial, there were some issues displaying HTML tags (and also, Aerial is much 'bigger' in scope; the "breadcrums" part is just a side note pretty much).
+With nvim-navic, I somehow couldn't get the highlighting all the way right (there were some minor issues) and as for Aerial, there were some issues displaying HTML tags (and also, Aerial is much 'bigger' in scope; the "breadcrums" part is just a side note pretty much).
 
 Those minor bugs were probably much easier to fix than writing a plugin from the ground up (:D), but I decided to bite the bullet and 'be done with it'. :)
 
@@ -129,7 +129,7 @@ Those minor bugs were probably much easier to fix than writing a plugin from the
 
 ATM, I'm not aware of any major bugs, so - bug reports are very much appreciated. :)
 
-But, there was a bag when opening two or more files of different kinds (i.e. files using different LSP servers), that produced an error message when entering buffer (it was a single message and the plugin kept on working after the message).
+But, there was a bag when opening two or more files of different kinds (i.e. files using different LSP servers), that produced an error message when entering a buffer (it was a single message and the plugin kept on working after the message).
 
 Fortunately, I seem to have resolved that bug.
 
