@@ -13,9 +13,7 @@ But:
 - it plays nicely with HTML and PHP
 - it's pretty quick
 
-It is intended to be used with Lualine (even though it's not a full blown Lualine component yet).
-
-The output can also be used in other places (more on that in the next section).
+It is intended to be used with Lualine (even though it's not a full blown Lualine component yet), but, the output can also be used in other places (more on that in the next section).
 
 ## Requirements
 
