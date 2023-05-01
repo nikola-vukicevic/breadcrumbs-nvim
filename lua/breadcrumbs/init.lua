@@ -4,6 +4,18 @@
 local M = { }
 -- -----------------------------------------------------------------------------
 local MainConfig = {
+	default_icon          = " ",
+	class_hl_normal       = "BreadcrumbsNormal",
+	class_hl_separator    = "BreadcrumbsSeparator",
+	class_hl_default_icon = "BreadcrumbsDefaultIcon",
+	separator             = " ⟩ ",
+	-- separator             = " • ",
+	-- separator             = " > ",
+	separator_char        = "⟩",
+	use_icons             = true,
+	use_colors            = true,
+	lualine_refresh       = false,
+	debug_msg             = false,
 	icons = {
 		[1] =   " " , -- File
 		[2] =   " " , -- Module
@@ -62,18 +74,6 @@ local MainConfig = {
 		[26] =  "BreadcrumbsTypeParameter" ,  -- TypeParameter
 		[255] = "BreadcrumbsMacro" ,          -- Macro
 	},
-	default_icon          = " ",
-	class_hl_normal       = "BreadcrumbsNormal",
-	class_hl_separator    = "BreadcrumbsSeparator",
-	class_hl_default_icon = "BreadcrumbsDefaultIcon",
-	separator             = " ⟩ ",
-	-- separator             = " • ",
-	-- separator             = " > ",
-	separator_char        = "⟩",
-	use_icons             = true,
-	use_colors            = true,
-	lualine_refresh       = false,
-	debug_msg             = false,
 }
 -- -----------------------------------------------------------------------------
 function IsUnderCursor(cur, sym)
@@ -118,7 +118,7 @@ function IsUnderCursor(cur, sym)
 	return { res = res, corr = corr }
 end
 -- -----------------------------------------------------------------------------
-function AuxGetRangeHTMLPHP(sym) -- 357
+function AuxGetRangeObjHTMLPHP(sym) -- 357
 	if vim.bo.filetype == "html" then
 		if sym.location.range ~= nil then
 			return sym.location.range
@@ -142,7 +142,9 @@ function AuxGetRangeHTMLPHP(sym) -- 357
 	end
 end
 -- -----------------------------------------------------------------------------
-function AuxGetLineHTMLPHP(sym) -- 400
+-- TODO: Check whether conditions need improvement
+-- -----------------------------------------------------------------------------
+function AuxGetLineNumHTMLPHP(sym) -- 400
 	local line
 	--
 	if vim.bo.filetype == "html" then
@@ -158,10 +160,10 @@ function AuxGetLineHTMLPHP(sym) -- 400
 	return line
 end
 -- -----------------------------------------------------------------------------
--- TODO
+-- TODO: Check callers and terminate early (possible bug fix)
 -- -----------------------------------------------------------------------------
 function GetSymbolCoordinates(sym)
-	local range = AuxGetRangeHTMLPHP(sym)
+	local range = AuxGetRangeObjHTMLPHP(sym)
 	if range == nil then return nil end
 	--
 	return {
@@ -265,7 +267,7 @@ function StringBeginsWith(str, pat)
 	return string.sub(str, 1, #pat) == pat
 end
 -- -----------------------------------------------------------------------------
--- TODO
+-- TODO: Use the FormatSymbolSeparator() function
 -- -----------------------------------------------------------------------------
 function LeftTrimPHP(s)
 	-- form the separator string pattern:
@@ -331,6 +333,9 @@ function FormatSymbolHTMLResolveSameRow(t_old)
 	end
 end
 -- -----------------------------------------------------------------------------
+-- TODO: Generally speaking, t_new can probably be reduced to a single
+--       variable (it doesn't need to be a table/list)
+-- -----------------------------------------------------------------------------
 function FormatSymbolsHTMLWorker(t_old)
 	local t_new = { }
 	--
@@ -376,11 +381,11 @@ function FormatSymbolsHTML(t_old)
 	end
 end
 -- -----------------------------------------------------------------------------
--- TODO !!!
+-- TODO !!! (Check indices again)
 -- -----------------------------------------------------------------------------
 function CheckMatchStartOrEnd(sym)
 	local cur   = GetCursorCoordinates()
-	local range = AuxGetRangeHTMLPHP(sym)
+	local range = AuxGetRangeObjHTMLPHP(sym)
 	if range == nil then return nil end
 	--
 	return (cur.line == range.start.line      + 1 and
@@ -406,7 +411,7 @@ function ParseTableHTML(list)
 			s = separator .. s
 		end
 		--
-		local line = AuxGetLineHTMLPHP(list[i])
+		local line = AuxGetLineNumHTMLPHP(list[i])
 		--
 		table.insert(t_new, {
 			first              = list[i].containerName,
@@ -497,7 +502,7 @@ end
 -- TODO (REFRESH?)
 -- -----------------------------------------------------------------------------
 function GetSymbols(data, depth)
-	local range = AuxGetRangeHTMLPHP(data[1])
+	local range = AuxGetRangeObjHTMLPHP(data[1])
 	if range == nil then return end
 	-- if data == nil or data == "" then return end
 	vim.g.lsp_current_symbol = ""
