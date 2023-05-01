@@ -77,14 +77,14 @@ local MainConfig = {
 }
 -- -----------------------------------------------------------------------------
 function IsUnderCursor(cur, sym)
-	local res = false
-	local cor = 0
+	local res  = false
+	local corr = 0
 	-- cursor is at least one whole row above the symbol
 	if cur.line < sym.line1 + 1 then
-		cor = -1
+		corr = -1
 	-- cursor is at least one whole row below the symbol
 	elseif cur.line > (sym.line2 + 1) then
-		cor = 1
+		corr = 1
 	-- document symbol expands over multiple rows and
 	-- the cursor is between the first row (not in) and the
 	-- last row (not including the first and last rows)
@@ -95,27 +95,27 @@ function IsUnderCursor(cur, sym)
 	elseif sym.line1 == sym.line2 and cur.line == sym.line1 + 1 then
 		res = cur.col >= sym.col1 + 1 and cur.col <= sym.col2 + 1
 		if res == false and cur.col < sym.col1 + 1 then
-			cor = -1
+			corr = -1
 		elseif res == false then
-			cor = 1
+			corr = 1
 		end
 	-- document symbol expands over multiple rows;
 	-- cursor is in the first row (occupied by the symbol)
 	elseif cur.line == sym.line1 + 1 then
 		res = cur.col >= sym.col1 + 1
 		if res == false then
-			cor = -1
+			corr = -1
 		end
 	-- document symbol expands over multiple rows;
 	-- cursor is in the last row occupied by the symbol
 	elseif cur.line == sym.line2 + 1 then
 		res = cur.col <= sym.col2 + 1
 		if res == false then
-			cor = 1
+			corr = 1
 		end
 	end
 	--
-	return { res = res, cor = cor }
+	return { res = res, corr = corr }
 end
 -- -----------------------------------------------------------------------------
 function AuxGetRangeHTMLPHP(sym) -- 357
@@ -464,9 +464,9 @@ function GetSymbolsWorkerBinary(data, depth)
 				GetSymbolsWorker(sym.children, depth + 1)
 			end
 			break
-		elseif checkSymbol.cor == -1 then
+		elseif checkSymbol.corr == -1 then
 			d = i -1
-		elseif checkSymbol.cor == 1 then
+		elseif checkSymbol.corr == 1 then
 			l = i + 1
 		end
 	end
