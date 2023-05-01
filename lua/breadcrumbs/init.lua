@@ -118,7 +118,19 @@ function IsUnderCursor(cur, sym)
 	return { res = res, corr = corr }
 end
 -- -----------------------------------------------------------------------------
+function AuxGetRangeEarlyTermination(sym)
+	if sym == nil then return nil end
+	--
+	if vim.bo.filetype == "html" and sym.location == nil then
+		return nil
+	end
+	--
+	return true
+end
+-- -----------------------------------------------------------------------------
 function AuxGetRangeObjHTMLPHP(sym) -- 357
+	if AuxGetRangeEarlyTermination(sym) ~= true then return nil end
+	--
 	if vim.bo.filetype == "html" then
 		if sym.location.range ~= nil then
 			return sym.location.range
