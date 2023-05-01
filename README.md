@@ -8,7 +8,7 @@ For now, it's just a personal project (in beta state), so use at your own risk.
 
 But:
 
-- it works *
+- it works
 - it displays colors and icons
 - it plays nicely with HTML and PHP
 - it's pretty quick
@@ -16,12 +16,6 @@ But:
 It is intended to be used with Lualine (even though it's not a full blown Lualine component yet).
 
 The output can also be used in other places (more on that in the next section).
-
-* .... apart from some small bugs listed below (and of course, bug reports are very much appreciated.)
-
-## Bugs
-
-Sometimes when opening two or more files of different kinds (i.e. files using different LSP servers), there's an error message when entering buffer (but it's a single message and the plugin keeps on working after the message).
 
 ## Requirements
 
@@ -34,34 +28,34 @@ Sometimes when opening two or more files of different kinds (i.e. files using di
 
 ATM, setup is not automated, but it isn't that hard either:
 
-- There are two exposed methods (`Load` and `Update`), that need to be hooked up to Vim's `CursorMoved` and `InsertLeave` events
+- There are two exposed methods (`Load` and `Update`), that need to be hooked up to Vim's `CursorMoved` and `InsertLeave` events.
 
-```lua
-vim.api.nvim_create_autocmd( { "InsertLeave" } , {
-	pattern = "*",
-	command = "lua require('breadcrumbs').Load()"
-})
+The `Load` method also needs to be connected with Vim's `CursorHold` method and (more importantly), data structure that stores the locations of various document symbols, needs to be initialized when LSP server starts.
 
-vim.api.nvim_create_autocmd("CursorMoved" , {
-	pattern = "*",
-	command = "lua require('breadcrumbs').Update()"
-})
-```
-
-The Load method also needs to be connected with Vim's `CursorHold` method and (more importantly), data structure that stores the locations of various document symbols, needs to be initialized when LSP server starts.
-
-Probably the easiest way to do it, is to add the following lines to the `on_attach` method that gets called when the LSP server initializes.
+Probably the easiest way to do all of the above, is to add the following lines to the `on_attach` method that gets called when the LSP server starts.
 
 ```lua
 local on_attach = function(client, bufnr)
 	....
 	if client.server_capabilities.documentSymbolProvider then
-		require('breadcrumbs').Load()
-		vim.api.nvim_create_autocmd( { "CursorHold" } , {
-			pattern = "*",
-			command = "lua require('breadcrumbs').Load()"
+		vim.api.nvim_create_autocmd(
+			{
+				"InsertLeave",
+				"BufEnter",
+				"CursorHold"
+			} , {
+			command = "lua require('breadcrumbs').Load()",
+			buffer  = bufnr,
 		})
-	end
+		--
+		vim.api.nvim_create_autocmd("CursorMoved" , {
+			command = "lua require('breadcrumbs').Update()",
+			buffer  = bufnr,
+		})
+		--
+		require('breadcrumbs').Load()
+		--
+    	end
 	....
 end
 ```
@@ -123,6 +117,14 @@ vim.api.nvim_set_hl ( 0 , "BreadcrumbsMacro" ,         { bg = "#2c323c" , fg = "
 ## Motivation/rationale
 
 I check out 'the usual suspects', but considering that I had some small highlighting issues with nvim-navic and some issues displaying HTML tags with Aerial (and also, Aerial is much 'bigger' in scope), I decided to just write my own implementation from scratch and 'be done with it'.
+
+## Bugs
+
+ATM, I'm not aware of any major bugs, so - bug reports are very much appreciated. :)
+
+There was a bag when opening two or more files of different kinds (i.e. files using different LSP servers), that produced an error message when entering buffer (it was a single message and the plugin kept on working after the message).
+
+I seem to have resolved that bug.
 
 ## TODO
 
