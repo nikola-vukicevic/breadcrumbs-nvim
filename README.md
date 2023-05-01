@@ -19,6 +19,10 @@ The output can also be used in other places (more on that in the next section).
 
 ( * I can't spot any major issues but, of course, bug reports are very much appreciated.)
 
+## Bugs
+
+Sometimes when opening two or more files of different kinds (i.e. files using different LSP servers), there's an error message when entering buffer (but it's a single message and the plugin keeps on working after the message).
+
 ## Requirements
 
 - Neovim
