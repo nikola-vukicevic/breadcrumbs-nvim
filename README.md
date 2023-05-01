@@ -30,7 +30,7 @@ ATM, setup is not automated, but it isn't that hard either:
 
 - There are two exposed methods (`Load` and `Update`), that need to be hooked up to Vim's `CursorMoved` and `InsertLeave` events.
 
-The `Load` method also needs to be connected with Vim's `CursorHold` method and (more importantly), data structure that stores the locations of various document symbols, needs to be initialized when LSP server starts.
+- The `Load` method also needs to be connected with Vim's `CursorHold` method and (more importantly), data structure that stores the locations of various document symbols, needs to be initialized when LSP server starts.
 
 Probably the easiest way to do all of the above, is to add the following lines to the `on_attach` method that gets called when the LSP server starts.
 
@@ -53,9 +53,14 @@ local on_attach = function(client, bufnr)
 			buffer  = bufnr,
 		})
 		--
+		vim.api.nvim_create_autocmd("BufDelete" , {
+			command = "lua require('breadcrumbs').Reset()",
+			buffer  = bufnr,
+		})
+		--
 		require('breadcrumbs').Load()
 		--
-    	end
+   	end
 	....
 end
 ```
@@ -82,7 +87,7 @@ require('lualine').setup {
 }
 ```
 
-In order for everythong to work properly, custom highlighting groups need to be set up (example shown below) ....
+In order for everythong to work properly, custom highlighting groups also need to be set up (example shown below) ....
 
 ```lua
 vim.api.nvim_set_hl ( 0 , "BreadcrumbsFile" ,          { bg = "#2c323c" , fg = "#7fc29b" } )
@@ -116,15 +121,19 @@ vim.api.nvim_set_hl ( 0 , "BreadcrumbsMacro" ,         { bg = "#2c323c" , fg = "
 
 ## Motivation/rationale
 
-I check out 'the usual suspects', but considering that I had some small highlighting issues with nvim-navic and some issues displaying HTML tags with Aerial (and also, Aerial is much 'bigger' in scope), I decided to just write my own implementation from scratch and 'be done with it'.
+I wanted a very simple plugin that only creates the "breadcrumbs", so I checked out 'the usual suspects'.
+
+With nvim-navic, I somehow couldn't get the highlighting all the way right (there were some minor issues). As for Aerial, there were some issues displaying HTML tags (and also, Aerial is much 'bigger' in scope; the "breadcrums" part is just a side note pretty much).
+
+Those minor bugs were probably much easier to fix than writing a plugin from the ground up (:D), but I decided to bite the bullet and 'be done with it'. :)
 
 ## Bugs
 
 ATM, I'm not aware of any major bugs, so - bug reports are very much appreciated. :)
 
-There was a bag when opening two or more files of different kinds (i.e. files using different LSP servers), that produced an error message when entering buffer (it was a single message and the plugin kept on working after the message).
+But, there was a bag when opening two or more files of different kinds (i.e. files using different LSP servers), that produced an error message when entering buffer (it was a single message and the plugin kept on working after the message).
 
-I seem to have resolved that bug.
+Fortunately, I seem to have resolved that bug.
 
 ## TODO
 
