@@ -71,8 +71,8 @@ local MainConfig = {
 	-- separator             = " > ",
 	separator_char        = "⟩",
 	use_icons             = true,
-	lualine_refresh       = false,
 	use_colors            = true,
+	lualine_refresh       = false,
 	debug_msg             = false,
 }
 -- -----------------------------------------------------------------------------
@@ -80,36 +80,36 @@ function IsUnderCursor(cur, sym)
 	local res = false
 	local cor = 0
 	-- cursor is at least one whole row above the symbol
-	if cur.r < sym.r1 + 1 then
+	if cur.line < sym.line1 + 1 then
 		cor = -1
 	-- cursor is at least one whole row below the symbol
-	elseif cur.r > (sym.r2 + 1) then
+	elseif cur.line > (sym.line2 + 1) then
 		cor = 1
 	-- document symbol expands over multiple rows and
 	-- the cursor is between the first row (not in) and the
 	-- last row (not including the first and last rows)
-	elseif cur.r > sym.r1 + 1 and cur.r < sym.r2 + 1 then
+	elseif cur.line > sym.line1 + 1 and cur.line < sym.line2 + 1 then
 		res = true
 	-- document symbol is in a single row/line and
 	-- the cursor is in the same row
-	elseif sym.r1 == sym.r2 and cur.r == sym.r1 + 1 then
-		res = cur.c >= sym.c1 + 1 and cur.c <= sym.c2 + 1
-		if res == false and cur.c < sym.c1 + 1 then
+	elseif sym.line1 == sym.line2 and cur.line == sym.line1 + 1 then
+		res = cur.col >= sym.col1 + 1 and cur.col <= sym.col2 + 1
+		if res == false and cur.col < sym.col1 + 1 then
 			cor = -1
 		elseif res == false then
 			cor = 1
 		end
 	-- document symbol expands over multiple rows;
 	-- cursor is in the first row (occupied by the symbol)
-	elseif cur.r == sym.r1 + 1 then
-		res = cur.c >= sym.c1 + 1
+	elseif cur.line == sym.line1 + 1 then
+		res = cur.col >= sym.col1 + 1
 		if res == false then
 			cor = -1
 		end
 	-- document symbol expands over multiple rows;
 	-- cursor is in the last row occupied by the symbol
-	elseif cur.r == sym.r2 + 1 then
-		res = cur.c <= sym.c2 + 1
+	elseif cur.line == sym.line2 + 1 then
+		res = cur.col <= sym.col2 + 1
 		if res == false then
 			cor = 1
 		end
@@ -162,12 +162,13 @@ end
 -- -----------------------------------------------------------------------------
 function GetSymbolCoordinates(sym)
 	local range = AuxGetRangeHTMLPHP(sym)
+	if range == nil then return nil end
 	--
 	return {
-		r1 = range.start.line,
-		c1 = range.start.character,
-		r2 = range['end'].line,
-		c2 = range['end'].character
+		line1 = range.start.line,
+		col1  = range.start.character,
+		line2 = range['end'].line,
+		col2  = range['end'].character
 	}
 end
 -- -----------------------------------------------------------------------------
@@ -175,8 +176,8 @@ function GetCursorCoordinates()
 	local coord = vim.fn.getcurpos(0)
 
 	return {
-		r = coord[2],
-		c = coord[3]
+		line = coord[2],
+		col  = coord[3]
 	}
 end
 -- -----------------------------------------------------------------------------
@@ -380,12 +381,13 @@ end
 function CheckMatchStartOrEnd(sym)
 	local cur   = GetCursorCoordinates()
 	local range = AuxGetRangeHTMLPHP(sym)
+	if range == nil then return nil end
 	--
-	return (cur.r == range.start.line      + 1 and
-	        cur.c == range.start.character + 1)
+	return (cur.line == range.start.line      + 1 and
+	        cur.col  == range.start.character + 1)
 		   or
-		   (cur.r == range['end'].line      + 1 and
-		    cur.c == range['end'].character)
+		   (cur.line == range['end'].line      + 1 and
+		    cur.col  == range['end'].character)
 end
 -- -----------------------------------------------------------------------------
 function ParseTableHTML(list)
@@ -495,7 +497,6 @@ end
 -- TODO (REFRESH?)
 -- -----------------------------------------------------------------------------
 function GetSymbols(data, depth)
-	if data[1] == nil then return end
 	local range = AuxGetRangeHTMLPHP(data[1])
 	if range == nil then return end
 	-- if data == nil or data == "" then return end
