@@ -549,5 +549,11 @@ M.Update = function()
 	GetSymbols(vim.g.lsp_buf_result, 0)
 end
 -- -----------------------------------------------------------------------------
+M.Reset = function ()
+	vim.g.lsp_buf_result     = nil
+	vim.g.lsp_last_symbol    = nil
+	vim.g.lsp_current_symbol = nil
+end
+-- -----------------------------------------------------------------------------
 return M
 -- -----------------------------------------------------------------------------
